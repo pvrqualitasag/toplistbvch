@@ -202,9 +202,37 @@ for (ctridx in seq_along(vec_det_traits)){
 }
 
 ## Save workbook to working directory
-saveWorkbook(wb, file = "example.xlsx", overwrite = TRUE)
+saveWorkbook(wb, file = "Toplisten_Stiere_CHbv_1904.xlsx", overwrite = TRUE)
 ```
 
+
+# Feature Request With Extended Column Names
+Column names of the single tables should not be just the shown abbreviations, but they should be the real names. Hence we use a list that maps the abbreviations to the real names
+
+
+```{r}
+vec_det_traits
+```
+
+```{r}
+l_trait_name <- lapply(vec_det_traits, function(x) return(x))
+names(l_trait_name) <- vec_det_traits
+```
+
+Required adaptations are:
+
+```{r}
+l_trait_name$`ZW Milch` <- "Milch kg"
+l_trait_name$EwP <- "Eiweiss %"
+l_trait_name$ND <- "Nutzungsdauer"
+l_trait_name$Per <- "Persistenz"
+l_trait_name$FBK <- "Fruchtbarkeit"
+
+```
+
+
+
+# Additional Experimental Stuff
 ```{r}
 names(l_final_tl)
 ```

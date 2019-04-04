@@ -356,7 +356,7 @@ For future use, we write that `tibble` to a file
 ```{r}
 s_trait_name_file <- "tl_trait_names.csv"
 if (!file.exists(s_trait_name_file))
-  readr::write_csv2(tbl_trait_name, path = s_trait_name_file)
+  readr::write_csv(tbl_trait_name, path = s_trait_name_file)
 ```
 
 The trait names are now stored in `tbl_trait_name`. The access of the trait name via its abbreviation is different now. 

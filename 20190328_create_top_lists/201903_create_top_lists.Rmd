@@ -227,9 +227,217 @@ l_trait_name$EwP <- "Eiweiss %"
 l_trait_name$ND <- "Nutzungsdauer"
 l_trait_name$Per <- "Persistenz"
 l_trait_name$FBK <- "Fruchtbarkeit"
-
+l_trait_name$LBE <- "Gesamtnote"
+l_trait_name$EU  <- "Euter"
+l_trait_name$ZZ  <- "Zellzahl"
+l_trait_name$RA  <- "Rahmen"
+l_trait_name$BE  <- "Becken"
+l_trait_name$FU  <- "Fundament"
 ```
 
+
+These explicit trait names are used as additional arguments in the function that creates the lists with the information about the top-ranking animals. For reasons of simplicity, this function is re-defined here.
+
+```{r}
+read_top_list_info2 <- function(pl_breed_input, pl_trait, pvec_resultcols){
+  ### # output some parameter info
+  cat("[INFO -- read_top_list_info2] breeds:\n")
+  print(pl_breed_input$breeds)
+  cat("[INFO -- read_top_list_info2] input files:\n")
+  print(pl_breed_input$inputfiles)
+  cat("[INFO -- read_top_list_info2] number of top candidates:\n")
+  print(pl_breed_input$numbertop)
+  cat("[INFO -- read_top_list_info2] tratis: \n")
+  vec_trait <- names(pl_trait)
+  print(vec_trait)
+  ### # initialize final result
+  l_final_result <- NULL
+  ### # loop over breeds and do the extraction
+  for (nbidx in seq_along(pl_breed_input$breeds)){
+    ### # read current input file
+    tbl_cur_tl <- readr::read_csv2(file = pl_breed_input$inputfiles[nbidx])
+    ### # extract the current result
+    l_cur_result <- lapply(vec_trait, function(x) {
+                                       if (x %in% names(tbl_cur_tl)){
+                                         tbl_cur_trait <- dplyr::bind_cols(tibble::tibble(Rang = 1:pl_breed_input$numbertop[nbidx]), 
+                                             tbl_cur_tl[order(tbl_cur_tl[[x]], decreasing = TRUE), c(pvec_resultcols, x)][1:pl_breed_input$numbertop[nbidx],])
+                                         names(tbl_cur_trait)[ncol(tbl_cur_trait)] <- pl_trait[[x]]
+                                         return(tbl_cur_trait)
+                                       } else {
+                                         return(NULL)
+                                       }})
+    names(l_cur_result) <- vec_trait
+    ### # add current result to final result
+    l_final_result <- c(l_final_result, list(l_cur_result))
+  }
+  ### # use the breeds as names for the final result list
+  names(l_final_result) <- pl_breed_input$breeds
+  ### # return list of final results
+  return(l_final_result)
+}
+```
+
+Testing the modified extraction function leads to 
+
+```{r}
+l_final_tl2 <- read_top_list_info2(pl_breed_input = l_breed_input, pl_trait = l_trait_name, pvec_resultcols = vec_result_cols)
+l_final_tl2
+```
+
+## Third version of `read_top_list_info()`
+Version 3 of the function reading the top-list information uses a `tibble` to map trait abbreviations to trait names. This makes it simpler to read this mapping from a file.
+
+```{r}
+read_top_list_info3 <- function(pl_breed_input, ptbl_trait, pvec_resultcols){
+  ### # output some parameter info
+  cat("[INFO -- read_top_list_info2] breeds:\n")
+  print(pl_breed_input$breeds)
+  cat("[INFO -- read_top_list_info2] input files:\n")
+  print(pl_breed_input$inputfiles)
+  cat("[INFO -- read_top_list_info2] number of top candidates:\n")
+  print(pl_breed_input$numbertop)
+  cat("[INFO -- read_top_list_info2] tratis: \n")
+  vec_trait <- ptbl_trait$Abk
+  print(vec_trait)
+  ### # initialize final result
+  l_final_result <- NULL
+  ### # loop over breeds and do the extraction
+  for (nbidx in seq_along(pl_breed_input$breeds)){
+    ### # read current input file
+    tbl_cur_tl <- readr::read_csv2(file = pl_breed_input$inputfiles[nbidx])
+    ### # extract the current result
+    l_cur_result <- lapply(vec_trait, function(x) {
+                                       if (x %in% names(tbl_cur_tl)){
+                                         tbl_cur_trait <- dplyr::bind_cols(tibble::tibble(Rang = 1:pl_breed_input$numbertop[nbidx]), 
+                                             tbl_cur_tl[order(tbl_cur_tl[[x]], decreasing = TRUE), c(pvec_resultcols, x)][1:pl_breed_input$numbertop[nbidx],])
+                                         names(tbl_cur_trait)[ncol(tbl_cur_trait)] <- ptbl_trait[ptbl_trait$Abk == x,]$Name
+                                         return(tbl_cur_trait)
+                                       } else {
+                                         return(NULL)
+                                       }})
+    names(l_cur_result) <- vec_trait
+    ### # add current result to final result
+    l_final_result <- c(l_final_result, list(l_cur_result))
+  }
+  ### # use the breeds as names for the final result list
+  names(l_final_result) <- pl_breed_input$breeds
+  ### # return list of final results
+  return(l_final_result)
+}
+```
+
+
+Instead of a list, we can also use a tibble which can also be read from an input file
+
+```{r}
+tbl_trait_name <- tibble::tibble(Abk = vec_det_traits,
+                                 Name = vec_det_traits)
+```
+
+Adaptations are done with the following statements
+
+```{r}
+tbl_trait_name[tbl_trait_name$Abk == "ZW Milch","Name"] <- "Milch kg"
+tbl_trait_name[tbl_trait_name$Abk == "EwP", "Name"] <- "Eiweiss %"
+tbl_trait_name[tbl_trait_name$Abk == "ND", "Name"]  <- "Nutzungsdauer"
+tbl_trait_name[tbl_trait_name$Abk == "Per", "Name"] <- "Persistenz"
+tbl_trait_name[tbl_trait_name$Abk == "FBK", "Name"] <-"Fruchtbarkeit"
+tbl_trait_name[tbl_trait_name$Abk == "LBE", "Name"] <- "Gesamtnote"
+tbl_trait_name[tbl_trait_name$Abk == "EU", "Name"]  <-  "Euter"
+tbl_trait_name[tbl_trait_name$Abk == "ZZ", "Name"]  <-  "Zellzahl"
+tbl_trait_name[tbl_trait_name$Abk == "RA", "Name"]  <-  "Rahmen"
+tbl_trait_name[tbl_trait_name$Abk == "BE", "Name"]  <-  "Becken"
+tbl_trait_name[tbl_trait_name$Abk == "FU", "Name"]  <-  "Fundament"  
+tbl_trait_name
+```
+
+For future use, we write that `tibble` to a file
+
+```{r}
+s_trait_name_file <- "tl_trait_names.csv"
+if (!file.exists(s_trait_name_file))
+  readr::write_csv2(tbl_trait_name, path = s_trait_name_file)
+```
+
+The trait names are now stored in `tbl_trait_name`. The access of the trait name via its abbreviation is different now. 
+
+```{r}
+tbl_trait_name[tbl_trait_name$Abk == "LBE", ][["Name"]]
+tbl_trait_name[tbl_trait_name$Abk == "LBE", ]$Name
+```
+
+The vector with all trait abbreviations is obtained via
+
+```{r}
+tbl_trait_name$Abk
+```
+
+The toplist information is obtained via 
+
+```{r}
+l_final_tl3 <- read_top_list_info3(pl_breed_input = l_breed_input, ptbl_trait = tbl_trait_name, pvec_resultcols = vec_result_cols)
+l_final_tl3
+```
+
+
+## Output Into xlsx Using A Function
+Given the toplist information consisting of a list of lists of tibbles, we create a function that writes everything into an xlsx file. 
+
+```{r}
+write_tl_xlsx <- function(pl_toplist, ptbl_trait, ps_xlsx_file = "example.xlsx"){
+  ### # extract trait abbreviations
+  vec_det_traits <- ptbl_trait$Abk
+  ### # vector of the breeds is taken from names of pl_toplist
+  vec_breed <- names(pl_toplist)
+  ### # create a new workbook
+  wb <- openxlsx::createWorkbook()
+  ### # add a table for the first trait
+  for (ctridx in seq_along(vec_det_traits)){
+    s_cur_trait <- vec_det_traits[ctridx]
+    cat(" * Current trait: ", s_cur_trait, "\n")
+    addWorksheet(wb, s_cur_trait)
+    ### # writing the data, start with trait name
+    n_cur_start_row <- 2
+    writeData(wb = wb, sheet = s_cur_trait, s_cur_trait, startCol = 1, startRow = n_cur_start_row)
+    ### # increment start row
+    n_cur_start_row <- n_cur_start_row + 1
+    ### # write first block of data for first breed
+    for (cbidx in seq_along(vec_breed)){
+      s_cur_breed <- vec_breed[cbidx]
+      cat(" ** Current breed: ", s_cur_breed, "\n")
+      tbl_cur_tab <- pl_toplist[[s_cur_breed]][[s_cur_trait]]
+      if (!is.null(tbl_cur_tab)){
+        cat("    ==> tibble found\n")
+        ### # write data frame for current breed
+        writeData(wb = wb, sheet = s_cur_trait, tbl_cur_tab, startCol = 1, startRow = n_cur_start_row)
+        ### # if we are not writing the last breed and the next breed also has toplist info, increment start row for second breed
+        if (cbidx < length(vec_breed) && !is.null(pl_toplist[[vec_breed[cbidx+1]]][[s_cur_trait]])){
+          n_cur_start_row <- n_cur_start_row + nrow(tbl_cur_tab) + 3
+          writeData(wb = wb, sheet = s_cur_trait, vec_breed[cbidx + 1], startCol = 1, startRow = n_cur_start_row)
+          n_cur_start_row <- n_cur_start_row + 2
+        }
+      }
+    }
+  }
+  
+  ## Save workbook to working directory
+  saveWorkbook(wb, file = ps_xlsx_file, overwrite = TRUE)
+  ### # return nothing
+  return(invisible(TRUE))
+}
+```
+
+How can we determine the vector of the breeds
+
+```{r}
+names(l_final_tl3)
+```
+
+The xlsx writer function is tested with
+
+```{r}
+write_tl_xlsx(pl_toplist = l_final_tl3, ptbl_trait = tbl_trait_name, ps_xlsx_file = "Toplisten_Stiere_CHbv_1904.xlsx")
+```
 
 
 # Additional Experimental Stuff
